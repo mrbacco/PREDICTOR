@@ -128,6 +128,9 @@ This makes terminal output easy to scan and filter.
 |-- scrape_irish_lotto.py
 |-- irish_lotto_results.csv
 |-- README.md
+|-- LICENSE-APACHE
+|-- LICENSE-AGPL
+|-- COMMERCIAL-LICENSE.md
 ```
 
 ## Notes
@@ -136,9 +139,22 @@ This makes terminal output easy to scan and filter.
 - Lottery draws are random; no method can guarantee winning results.
 - Re-run the scraper before predictions to keep the dataset fresh.
 
-## License / Copyright
+## Licensing
 
-Header comments in source files indicate:
+This repository is set up with multiple licensing paths depending on use case:
 
-- copyright 2026 onwards
-- author email: mrbacco04@gmail.com
+1. Portfolio management, demos, and non-production/open usage
+- Apache License 2.0: see `LICENSE-APACHE`
+
+2. Serious commercial product use with open-source obligations
+- GNU AGPL v3: see `LICENSE-AGPL`
+
+3. Serious commercial product use without AGPL copyleft obligations
+- Commercial license under a separate agreement: see `COMMERCIAL-LICENSE.md`
+
+For commercial licensing requests, contact mrbacco04@gmail.com.
+
+## Copyright
+
+- Copyright 2026 onwards
+- Contact: mrbacco04@gmail.com
