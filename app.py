@@ -110,7 +110,6 @@ for num in range(1, 48):
 
 bac_log(f"Score calculation complete for {len(scores)} numbers")
 
-
 # -------------------------
 # Weighted random draw
 # -------------------------
@@ -127,7 +126,6 @@ def weighted_pick():
         selected.add(pick)
 
     return sorted(selected)
-
 
 # -------------------------
 # Pattern filter
@@ -157,7 +155,6 @@ def valid_line(line):
 
     return True
 
-
 # -------------------------
 # Score ticket by pair strength
 # -------------------------
@@ -173,7 +170,6 @@ def score_ticket(line):
         score += pair_freq[pair] * 2
 
     return score
-
 
 # -------------------------
 # Monte Carlo generation
@@ -201,7 +197,7 @@ bac_log(f"Monte Carlo complete with {len(candidates)} valid candidates")
 # Remove duplicates
 seen = set()
 best = []
-bac_log("Removing duplicate tickets and selecting top 20")
+bac_log("Removing duplicate tickets and selecting top 0")
 
 for score, ticket in candidates:
     t = tuple(ticket)
@@ -211,11 +207,10 @@ for score, ticket in candidates:
         seen.add(t)
         best.append((score, ticket))
 
-    if len(best) == 20:
+    if len(best) == 10:
         break
 
 bac_log(f"Final ticket set prepared with {len(best)} lines")
-
 
 # -------------------------
 # Output
