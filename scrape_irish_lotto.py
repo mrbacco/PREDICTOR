@@ -141,6 +141,5 @@ def main() -> None:
 
     bac_log("CSV population complete")
 
-
 if __name__ == "__main__":
     main()

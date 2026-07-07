@@ -7,7 +7,6 @@
 # 
 #####################
 
-
 import csv
 import random
 from pathlib import Path
@@ -196,10 +195,8 @@ for idx in range(iterations):
     if (idx + 1) % 10000 == 0:
         bac_log(f"Monte Carlo progress: {idx + 1}/{iterations}")
 
-
 candidates.sort(reverse=True)
 bac_log(f"Monte Carlo complete with {len(candidates)} valid candidates")
-
 
 # Remove duplicates
 seen = set()
