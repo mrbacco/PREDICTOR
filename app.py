@@ -15,6 +15,13 @@ from itertools import combinations
 
 # Main dataset consumed by predictor and produced by scraper.
 CSV_FILE = "irish_lotto_results.csv"
+NUMBER_MIN = 1
+NUMBER_MAX = 47
+PICKS_PER_LINE = 6
+TOP_K = 20
+ITERATIONS = 50000
+# Set a fixed seed for reproducible runs; change this value to explore alternatives.
+RANDOM_SEED = 20260712
 
 
 def bac_log(message):
@@ -38,13 +45,36 @@ if not csv_path.exists():
     )
 
 draws = []
+skipped_rows = 0
 with csv_path.open("r", newline="", encoding="utf-8") as fp:
     reader = csv.DictReader(fp)
-    for row in reader:
+    for row_idx, row in enumerate(reader, start=2):
+        try:
+            nums = [int(row[col]) for col in number_cols]
+        except (TypeError, ValueError, KeyError):
+            skipped_rows += 1
+            bac_log(f"Skipping malformed row {row_idx}")
+            continue
+
+        # Ignore impossible rows that would corrupt frequency and pair stats.
+        if len(set(nums)) != PICKS_PER_LINE or any(n < NUMBER_MIN or n > NUMBER_MAX for n in nums):
+            skipped_rows += 1
+            bac_log(f"Skipping invalid row {row_idx}: {nums}")
+            continue
+
         # Keep each historical draw as six integers.
-        draws.append([int(row[col]) for col in number_cols])
+        draws.append(sorted(nums))
+
+if len(draws) < 10:
+    raise RuntimeError("Not enough valid historical draws to generate output. Refresh CSV data first.")
+if len(draws) < 100:
+    bac_log(
+        f"Warning: only {len(draws)} valid draws loaded. Output stability improves with more history."
+    )
 
 bac_log(f"CSV loaded with {len(draws)} rows")
+if skipped_rows:
+    bac_log(f"Skipped {skipped_rows} malformed or invalid rows")
 bac_log(f"Prepared draws list with {len(draws)} entries")
 
 
@@ -95,35 +125,55 @@ bac_log("Overdue analysis complete")
 bac_log("Calculating number scores")
 scores = {}
 
-for num in range(1, 48):
+freq_values = [freq[n] for n in range(NUMBER_MIN, NUMBER_MAX + 1)]
+last_seen_values = [last_seen[n] for n in range(NUMBER_MIN, NUMBER_MAX + 1)]
+
+def minmax(value, values):
+    low = min(values)
+    high = max(values)
+    if high == low:
+        return 0.0
+    return (value - low) / (high - low)
+
+for num in range(NUMBER_MIN, NUMBER_MAX + 1):
     hot = freq[num]
     cold = last_seen[num]
 
+    # Normalize components so no single metric dominates over time as data grows.
+    hot_n = minmax(hot, freq_values)
+    cold_n = minmax(cold, last_seen_values)
+
     # Blend hot and overdue behavior into one weight.
-    score = hot * 0.6 + cold * 0.4
+    score = hot_n * 0.6 + cold_n * 0.4
 
     # bonus for >31 to avoid birthday-heavy lines
     if num > 31:
         score *= 1.05
 
+    # Keep all weights positive for robust weighted sampling.
+    score += 0.01
+
     scores[num] = score
 
 bac_log(f"Score calculation complete for {len(scores)} numbers")
+
+# Deterministic RNG makes output repeatable for the same data and parameters.
+rng = random.Random(RANDOM_SEED)
+bac_log(f"Random seed set to {RANDOM_SEED}")
 
 # -------------------------
 # Weighted random draw
 # -------------------------
 def weighted_pick():
-    # Build population and probability weights once per ticket.
+    # Weighted sample without replacement avoids duplicate re-roll bias.
     population = list(scores.keys())
-    weights = [scores[n] for n in population]
+    selected = []
 
-    selected = set()
-
-    while len(selected) < 6:
-        # Keep sampling until we have six unique values.
-        pick = random.choices(population, weights=weights, k=1)[0]
-        selected.add(pick)
+    while len(selected) < PICKS_PER_LINE:
+        weights = [scores[n] for n in population]
+        pick = rng.choices(population, weights=weights, k=1)[0]
+        selected.append(pick)
+        population.remove(pick)
 
     return sorted(selected)
 
@@ -160,7 +210,7 @@ def valid_line(line):
 # -------------------------
 def score_ticket(line):
     # Start from individual number strengths.
-    score = 0
+    score = 0.0
 
     for n in line:
         score += scores[n]
@@ -177,7 +227,7 @@ def score_ticket(line):
 bac_log("Starting Monte Carlo generation")
 candidates = []
 
-iterations = 50000
+iterations = ITERATIONS
 bac_log(f"Configured iterations: {iterations}")
 
 for idx in range(iterations):
@@ -194,10 +244,13 @@ for idx in range(iterations):
 candidates.sort(reverse=True)
 bac_log(f"Monte Carlo complete with {len(candidates)} valid candidates")
 
+if not candidates:
+    raise RuntimeError("No valid candidates generated. Relax filter rules or increase iterations.")
+
 # Remove duplicates
 seen = set()
 best = []
-bac_log("Removing duplicate tickets and selecting top 0")
+bac_log(f"Removing duplicate tickets and selecting top {TOP_K}")
 
 for score, ticket in candidates:
     t = tuple(ticket)
@@ -207,7 +260,7 @@ for score, ticket in candidates:
         seen.add(t)
         best.append((score, ticket))
 
-    if len(best) == 10:
+    if len(best) == TOP_K:
         break
 
 bac_log(f"Final ticket set prepared with {len(best)} lines")
@@ -216,7 +269,7 @@ bac_log(f"Final ticket set prepared with {len(best)} lines")
 # Output
 # -------------------------
 bac_log("Printing final optimized lines")
-print("\nTop 20 Optimized Lines:\n")
+print(f"\nTop {TOP_K} Optimized Lines:\n")
 
 for i, (score, ticket) in enumerate(best, 1):
     print(f"{i:02d}. {ticket}   score={score:.2f}")
