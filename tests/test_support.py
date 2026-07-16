@@ -38,7 +38,7 @@ def build_test_config(root: Path) -> AppConfig:
         number_min=1,
         number_max=47,
         picks_per_line=6,
-        default_top_k=20,
+        default_top_k=5,
         default_iterations=5000,
         default_random_seed=20260712,
         min_history_required=10,

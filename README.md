@@ -77,7 +77,7 @@ python generate_predictions.py
 - `GET /api/health`
 - `GET /api/summary`
 - `GET /api/draws?limit=12`
-- `GET /api/predictions?top_k=20&iterations=50000&seed=20260712`
+- `GET /api/predictions?top_k=5&iterations=50000&seed=20260712`
 - `POST /api/refresh-data`
 
 ## Testing

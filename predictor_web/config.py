@@ -47,7 +47,7 @@ def load_config() -> AppConfig:
         number_min=1,
         number_max=47,
         picks_per_line=6,
-        default_top_k=int(os.getenv("PREDICTOR_DEFAULT_TOP_K", "20")),
+        default_top_k=int(os.getenv("PREDICTOR_DEFAULT_TOP_K", "5")),
         default_iterations=int(os.getenv("PREDICTOR_DEFAULT_ITERATIONS", "50000")),
         default_random_seed=int(os.getenv("PREDICTOR_RANDOM_SEED", "20260712")),
         min_history_required=int(os.getenv("PREDICTOR_MIN_HISTORY", "10")),

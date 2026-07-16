@@ -49,6 +49,9 @@ class PredictorEngine:
 
         bac_log("Starting predictor analysis")
         frequency = build_frequency(draws)
+        bonus_frequency = Counter(
+            draw.bonus for draw in draws if draw.bonus is not None
+        )
         pair_frequency = build_pair_frequency(draws)
         overdue = build_overdue(draws, self.config.number_min, self.config.number_max)
         scores = calculate_number_scores(
@@ -59,14 +62,20 @@ class PredictorEngine:
         )
 
         rng = random.Random(resolved_seed)
-        candidates: list[tuple[float, tuple[int, ...]]] = []
+        candidates: list[tuple[float, tuple[int, ...], int]] = []
 
         for index in range(resolved_iterations):
             ticket = self._weighted_pick(rng, scores)
 
             if self._is_valid_ticket(ticket):
+                bonus = self._weighted_bonus_pick(
+                    rng,
+                    scores,
+                    bonus_frequency,
+                    excluded=ticket,
+                )
                 score = self._score_ticket(ticket, scores, pair_frequency)
-                candidates.append((score, ticket))
+                candidates.append((score, ticket, bonus))
 
             if (index + 1) % 10000 == 0:
                 bac_log(f"Prediction progress: {index + 1}/{resolved_iterations}")
@@ -121,6 +130,21 @@ class PredictorEngine:
 
         return tuple(sorted(selected))
 
+    @staticmethod
+    def _weighted_bonus_pick(
+        rng: random.Random,
+        scores: dict[int, float],
+        bonus_frequency: Counter[int],
+        *,
+        excluded: tuple[int, ...],
+    ) -> int:
+        population = [number for number in scores if number not in excluded]
+        weights = [
+            scores[number] + bonus_frequency[number] * 0.25
+            for number in population
+        ]
+        return rng.choices(population, weights=weights, k=1)[0]
+
     def _is_valid_ticket(self, ticket: tuple[int, ...]) -> bool:
         low_count = sum(1 for number in ticket if number <= 31)
         if low_count > 4:
@@ -150,20 +174,25 @@ class PredictorEngine:
 
     @staticmethod
     def _deduplicate_candidates(
-        candidates: list[tuple[float, tuple[int, ...]]],
+        candidates: list[tuple[float, tuple[int, ...], int]],
         *,
         limit: int,
     ) -> list[PredictionLine]:
         seen: set[tuple[int, ...]] = set()
         lines: list[PredictionLine] = []
 
-        for score, ticket in candidates:
+        for score, ticket, bonus in candidates:
             if ticket in seen:
                 continue
 
             seen.add(ticket)
             lines.append(
-                PredictionLine(rank=len(lines) + 1, numbers=ticket, score=round(score, 2))
+                PredictionLine(
+                    rank=len(lines) + 1,
+                    numbers=ticket,
+                    bonus=bonus,
+                    score=round(score, 2),
+                )
             )
 
             if len(lines) == limit:

@@ -28,7 +28,7 @@ class PredictorEngineTests(unittest.TestCase):
             draws = repository.load_draws()
 
             engine = PredictorEngine(config)
-            report = engine.generate(draws, top_k=5, iterations=800, random_seed=101)
+            report = engine.generate(draws, iterations=800, random_seed=101)
 
             self.assertEqual(report.top_k, 5)
             self.assertEqual(len(report.lines), 5)
@@ -40,6 +40,9 @@ class PredictorEngineTests(unittest.TestCase):
                 self.assertEqual(tuple(sorted(line.numbers)), line.numbers)
                 self.assertEqual(len(line.numbers), 6)
                 self.assertEqual(len(set(line.numbers)), 6)
+                self.assertGreaterEqual(line.bonus, config.number_min)
+                self.assertLessEqual(line.bonus, config.number_max)
+                self.assertNotIn(line.bonus, line.numbers)
                 self.assertNotIn(line.numbers, seen_tickets)
                 seen_tickets.add(line.numbers)
 

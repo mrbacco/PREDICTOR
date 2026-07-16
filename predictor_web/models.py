@@ -33,12 +33,14 @@ class LottoDraw:
 class PredictionLine:
     rank: int
     numbers: tuple[int, ...]
+    bonus: int
     score: float
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "rank": self.rank,
             "numbers": list(self.numbers),
+            "bonus": self.bonus,
             "score": self.score,
         }
 

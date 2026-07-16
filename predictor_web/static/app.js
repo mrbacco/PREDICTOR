@@ -70,10 +70,23 @@ function renderPredictions(report) {
         return;
     }
 
+    const invalidLine = report.lines.find((line) => (
+        !Number.isInteger(line.bonus)
+        || line.bonus < 1
+        || line.bonus > 47
+        || line.numbers.includes(line.bonus)
+    ));
+    if (invalidLine) {
+        throw new Error(
+            "The prediction server is outdated. Restart the Python app and generate again."
+        );
+    }
+
     dom.predictionsList.innerHTML = report.lines.map((line) => `
         <article class="prediction-card">
             <h3>Rank ${line.rank}</h3>
             <p class="ticket-line">${line.numbers.join(" - ")}</p>
+            <p class="ticket-bonus">Bonus <strong>${line.bonus}</strong></p>
             <p class="ticket-score">Score: ${line.score.toFixed(2)}</p>
         </article>
     `).join("");

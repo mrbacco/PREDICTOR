@@ -10,16 +10,21 @@ License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Irish Lotto Predictor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet"
+    >
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <main class="page-shell">
         <section class="hero">
-            <p class="eyebrow">Scalable Lotto Analytics</p>
-            <h1>Irish Lotto Predictor Dashboard</h1>
+            <p class="eyebrow">Irish Lotto Analytics</p>
+            <h1>Irish Lotto Predictor</h1>
             <p class="hero-copy">
-                Explore recent draw history, refresh the dataset, and generate ranked prediction lines
-                from a modular backend built for growth.
+                Review draw history, refresh the dataset, and generate ranked prediction lines.
             </p>
         </section>
 
@@ -57,7 +62,7 @@ License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
                 <form id="prediction-form" class="control-form">
                     <label>
                         <span>Top Lines</span>
-                        <input id="top-k" name="top_k" type="number" min="1" max="50" value="20">
+                        <input id="top-k" name="top_k" type="number" min="1" max="50" value="5">
                     </label>
                     <label>
                         <span>Iterations</span>

@@ -47,6 +47,9 @@ class PredictorWebAppTests(unittest.TestCase):
             self.assertEqual(status, "200 OK")
             self.assertEqual(len(payload["lines"]), 3)
             self.assertEqual(payload["top_k"], 3)
+            for line in payload["lines"]:
+                self.assertIn("bonus", line)
+                self.assertNotIn(line["bonus"], line["numbers"])
 
     def test_predictions_endpoint_validates_limits(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

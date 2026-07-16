@@ -13,7 +13,10 @@ def main() -> None:
 
     print(f"\nTop {report['top_k']} Optimized Lines:\n")
     for line in report["lines"]:
-        print(f"{line['rank']:02d}. {line['numbers']}   score={line['score']:.2f}")
+        print(
+            f"{line['rank']:02d}. {line['numbers']} + bonus {line['bonus']}   "
+            f"score={line['score']:.2f}"
+        )
 
     bac_log(
         "Generated "
