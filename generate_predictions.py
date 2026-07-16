@@ -9,10 +9,15 @@ from predictor_web.services import LotteryService
 
 def main() -> None:
     service = LotteryService()
-    result = service.refresh_data()
+    report = service.generate_predictions()
+
+    print(f"\nTop {report['top_k']} Optimized Lines:\n")
+    for line in report["lines"]:
+        print(f"{line['rank']:02d}. {line['numbers']}   score={line['score']:.2f}")
+
     bac_log(
-        f"CSV population complete with {result['rows_written']} rows through "
-        f"{result['latest_draw_date']}."
+        "Generated "
+        f"{len(report['lines'])} ranked lines from {report['candidate_count']} valid candidates."
     )
 
 

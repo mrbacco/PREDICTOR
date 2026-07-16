@@ -3,10 +3,6 @@
 # Release Version: 1.0.0
 # License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
 
-from predictor_web import create_app, run_dev_server
 
-application = create_app()
-
-
-if __name__ == "__main__":
-    run_dev_server()
+def bac_log(message: str) -> None:
+    print(f"BAC_LOG: {message}")

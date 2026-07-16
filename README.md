@@ -1,160 +1,108 @@
+<!--
+Author: mrbacco04@gmail.com
+Month: July 2026
+Release Version: 1.0.0
+License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
+-->
 # Irish Lotto Predictor
 
-A Python project that:
+This repository is now structured as a modular web application instead of a single prediction script.
 
-- Scrapes historical Irish Lotto draw data from lottery.ie
-- Saves normalized results to CSV
-- Runs a weighted Monte Carlo ticket generator
-- Ranks and prints the top 20 candidate lines
+It includes:
 
-## What This App Does
+- a browser dashboard for recent draws, dataset refreshes, and prediction runs
+- a service layer that coordinates scraping, repository access, and prediction logic
+- separate modules for configuration, models, analytics, persistence, web routing, and CLI entrypoints
+- automated tests for the repository, predictor, and HTTP endpoints
 
-This repo contains two scripts:
+## Architecture
 
-- `scrape_irish_lotto.py`: downloads and parses Irish Lotto history data, then writes `irish_lotto_results.csv`
-- `app.py`: reads the CSV and generates optimized ticket lines using frequency, pair, and overdue heuristics
+The application is split into focused modules so it can grow cleanly:
 
-### 1) Data Collection (Scraper)
+- `app.py`: WSGI entrypoint and local development server launcher
+- `generate_predictions.py`: CLI command for ranked prediction output
+- `scrape_irish_lotto.py`: CLI command that refreshes the CSV dataset
+- `predictor_web/config.py`: environment-aware configuration
+- `predictor_web/models.py`: typed draw and report models
+- `predictor_web/repository.py`: CSV loading and persistence
+- `predictor_web/scraper.py`: Irish Lotto source scraping and parsing
+- `predictor_web/analytics.py`: frequency, pair, and overdue analysis
+- `predictor_web/predictor.py`: Monte Carlo ticket generation engine
+- `predictor_web/services.py`: orchestration layer for the web app and CLI tools
+- `predictor_web/web.py`: HTTP routes and WSGI app
+- `predictor_web/templates/index.html`: dashboard shell
+- `predictor_web/static/styles.css`: responsive UI styling
+- `predictor_web/static/app.js`: browser-side dashboard behavior
+- `tests/`: regression coverage for the refactor
 
-The scraper:
+## Features
 
-- Requests https://www.lottery.ie/results/lotto/history with browser-like headers
-- Extracts embedded `__NEXT_DATA__` JSON from the page
-- Reads the Lotto draw list from `props.pageProps.list`
-- Parses:
-  - draw date
-  - six main numbers (`n1`..`n6`)
-  - bonus number (`bonus`, when present)
-- Deduplicates rows by `draw_date`
-- Sorts by date ascending
-- Writes `irish_lotto_results.csv` with schema:
-
-```csv
-draw_date,n1,n2,n3,n4,n5,n6,bonus
-```
-
-### 2) Prediction Engine
-
-The predictor in `app.py` uses the CSV to build candidate lines.
-
-#### Inputs
-
-- File: `irish_lotto_results.csv`
-- Required columns consumed by predictor: `n1,n2,n3,n4,n5,n6`
-
-#### Analysis Steps
-
-1. Frequency analysis
-- Counts how often each number (1..47) appears.
-
-2. Pair analysis
-- Counts co-occurrence frequency for every 2-number combination from historical draws.
-
-3. Overdue analysis
-- Tracks how many draws since each number last appeared.
-
-4. Score calculation
-- Number score formula:
-  - `score = hot * 0.6 + cold * 0.4`
-  - where `hot = frequency`, `cold = overdue distance`
-- Applies a small bonus to numbers > 31:
-  - `score *= 1.05`
-
-5. Weighted random ticket generation
-- Uses weighted random sampling based on number scores
-- Ensures each ticket contains 6 unique numbers
-
-6. Pattern filter (`valid_line`)
-- Rejects lines with:
-  - more than 4 numbers <= 31
-  - odd count outside 2..4
-  - 2 or more consecutive adjacent pairs
-
-7. Ticket scoring (`score_ticket`)
-- Adds individual number scores
-- Adds pair strength bonus (`pair_freq[pair] * 2` for each pair in the line)
-
-8. Monte Carlo search
-- Runs 50,000 iterations
-- Keeps valid lines and their scores
-- Sorts by score descending
-- Removes duplicate tickets
-- Outputs top 20 unique lines
-
-## Requirements
-
-- Python 3.10+
-- Standard library only (no third-party packages required)
+- Historical Irish Lotto CSV repository with validation and logging
+- Weighted prediction engine with modular analysis steps
+- JSON API endpoints for health, summary, recent draws, and predictions
+- Browser UI for operating the predictor without changing code
+- Thin CLI entrypoints so automation scripts can stay simple
+- File headers added to every new source file with author, month, version, and license details
 
 ## How To Run
 
 From the project root:
 
-1. Refresh data:
+1. Refresh the CSV dataset:
 
 ```powershell
 python scrape_irish_lotto.py
 ```
 
-2. Generate top lines:
+2. Start the web application:
 
 ```powershell
 python app.py
 ```
 
-## Example Output
+3. Open the dashboard in your browser:
 
 ```text
-Top 20 Optimized Lines:
-
-01. [.., .., .., .., .., ..]   score=...
-...
-20. [.., .., .., .., .., ..]   score=...
+http://127.0.0.1:8080
 ```
 
-## Logging
+4. Optional CLI prediction run:
 
-Both scripts use prefixed logs for traceability:
-
-- `BAC_LOG: ...`
-
-This makes terminal output easy to scan and filter.
-
-## Project Structure
-
-```text
-.
-|-- app.py
-|-- scrape_irish_lotto.py
-|-- irish_lotto_results.csv
-|-- README.md
-|-- LICENSE-APACHE
-|-- LICENSE-AGPL
-|-- COMMERCIAL-LICENSE.md
+```powershell
+python generate_predictions.py
 ```
 
-## Notes
+## API Endpoints
 
-- This is a heuristic number-line generator for experimentation.
-- Lottery draws are random; no method can guarantee winning results.
-- Re-run the scraper before predictions to keep the dataset fresh.
+- `GET /api/health`
+- `GET /api/summary`
+- `GET /api/draws?limit=12`
+- `GET /api/predictions?top_k=20&iterations=50000&seed=20260712`
+- `POST /api/refresh-data`
+
+## Testing
+
+Run the automated checks with:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+## Scalability Notes
+
+This codebase is now organized around layers that can scale independently:
+
+- the UI is isolated from the prediction engine behind HTTP endpoints
+- the service layer keeps orchestration separate from storage and analytics
+- the repository layer can later move from CSV to a database without rewriting the predictor
+- the WSGI app can be hosted behind a production web server when you are ready to deploy
 
 ## Licensing
 
-This repository is set up with multiple licensing paths depending on use case:
+This repository supports multiple licensing paths:
 
-1. Portfolio management, demos, and non-production/open usage
-- Apache License 2.0: see `LICENSE-APACHE`
+1. Apache License 2.0: see `LICENSE-APACHE`
+2. GNU AGPL v3: see `LICENSE-AGPL`
+3. Commercial license: see `COMMERCIAL-LICENSE.md`
 
-2. Serious commercial product use with open-source obligations
-- GNU AGPL v3: see `LICENSE-AGPL`
-
-3. Serious commercial product use without AGPL copyleft obligations
-- Commercial license under a separate agreement: see `COMMERCIAL-LICENSE.md`
-
-For commercial licensing requests, contact mrbacco04@gmail.com.
-
-## Copyright
-
-- Copyright 2026 onwards
-- Contact: mrbacco04@gmail.com
+For commercial licensing requests, contact `mrbacco04@gmail.com`.
