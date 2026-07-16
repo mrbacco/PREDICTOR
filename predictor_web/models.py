@@ -15,7 +15,7 @@ class LottoDraw:
     bonus: int | None = None
 
     def to_csv_row(self) -> dict[str, Any]:
-        row = {"draw_date": self.draw_date.isoformat()}
+        row: dict[str, Any] = {"draw_date": self.draw_date.isoformat()}
         for index, number in enumerate(self.numbers, start=1):
             row[f"n{index}"] = number
         row["bonus"] = "" if self.bonus is None else self.bonus
