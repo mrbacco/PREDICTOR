@@ -5,6 +5,7 @@ Release Version: 1.0.0
 License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
 */
 
+/* Design tokens keep the minimalist palette and typography consistent. */
 :root {
     --bg: #f5f7f5;
     --surface: #ffffff;
@@ -18,6 +19,7 @@ License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
     --font-sans: "Aptos Narrow", "Roboto Condensed", "Arial Narrow", sans-serif;
 }
 
+/* Foundation and accessibility defaults. */
 * {
     box-sizing: border-box;
 }
@@ -46,6 +48,7 @@ input:focus-visible {
     outline-offset: 2px;
 }
 
+/* Page structure and introductory heading. */
 .page-shell {
     width: min(1180px, calc(100% - 3rem));
     margin: 0 auto;
@@ -98,6 +101,7 @@ input:focus-visible {
     line-height: 1.5;
 }
 
+/* Shared content panels and headings. */
 .panel {
     margin-top: 1rem;
     padding: 1.25rem;
@@ -120,6 +124,7 @@ input:focus-visible {
     font-size: 0.9rem;
 }
 
+/* Dataset overview metrics. */
 .metrics-grid,
 .prediction-grid {
     display: grid;
@@ -165,6 +170,7 @@ input:focus-visible {
     line-height: 1.2;
 }
 
+/* Main two-column workspace and prediction controls. */
 .two-column {
     display: grid;
     grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
@@ -242,6 +248,7 @@ button:disabled {
     background: var(--surface-soft);
 }
 
+/* Recent-draw data table. */
 .table-shell {
     overflow-x: auto;
     border-top: 1px solid var(--line);
@@ -273,6 +280,7 @@ tbody tr:last-child td {
     border-bottom: 0;
 }
 
+/* Ranked prediction cards, including bonus and score metadata. */
 .prediction-grid {
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: 0.6rem;
@@ -333,12 +341,14 @@ tbody tr:last-child td {
     text-align: center;
 }
 
+/* Collapse the main workspace before controls become cramped. */
 @media (max-width: 880px) {
     .two-column {
         grid-template-columns: 1fr;
     }
 }
 
+/* Arrange metrics as two columns on compact tablets. */
 @media (max-width: 760px) {
     .metrics-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -357,6 +367,7 @@ tbody tr:last-child td {
     }
 }
 
+/* Mobile layout uses one-column metrics and full-width actions. */
 @media (max-width: 640px) {
     .page-shell {
         width: min(100% - 1.25rem, 1180px);

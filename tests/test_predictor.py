@@ -3,6 +3,8 @@
 # Release Version: 1.0.0
 # License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
 
+"""Prediction engine regression tests for ranking, uniqueness, and bonus rules."""
+
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,7 +15,10 @@ from tests.test_support import build_test_config, write_sample_csv
 
 
 class PredictorEngineTests(unittest.TestCase):
+    """Verify externally visible prediction report invariants."""
+
     def test_generate_returns_ranked_unique_lines(self) -> None:
+        """The default run returns five ranked unique lines with valid bonuses."""
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config = build_test_config(root)
@@ -36,6 +41,7 @@ class PredictorEngineTests(unittest.TestCase):
             self.assertGreater(report.candidate_count, 0)
 
             seen_tickets = set()
+            # Every line must satisfy the public API contract, not a specific random result.
             for line in report.lines:
                 self.assertEqual(tuple(sorted(line.numbers)), line.numbers)
                 self.assertEqual(len(line.numbers), 6)

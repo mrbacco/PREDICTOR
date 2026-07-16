@@ -3,11 +3,14 @@
 # Release Version: 1.0.0
 # License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
 
+"""Shared deterministic fixtures for repository, predictor, and web tests."""
+
 import csv
 from pathlib import Path
 
 from predictor_web.config import AppConfig
 
+# Twelve valid rows satisfy the predictor's minimum-history requirement.
 SAMPLE_DRAWS = [
     ("2026-01-04", (2, 9, 14, 21, 28, 35), 42),
     ("2026-01-08", (5, 11, 17, 23, 29, 41), 7),
@@ -25,6 +28,7 @@ SAMPLE_DRAWS = [
 
 
 def build_test_config(root: Path) -> AppConfig:
+    """Create an isolated configuration while reusing real static assets."""
     package_root = Path(__file__).resolve().parent.parent / "predictor_web"
 
     return AppConfig(
@@ -51,12 +55,14 @@ def build_test_config(root: Path) -> AppConfig:
 
 
 def write_sample_csv(csv_path: Path) -> None:
+    """Write the deterministic sample history using the production CSV schema."""
     fieldnames = ["draw_date", "n1", "n2", "n3", "n4", "n5", "n6", "bonus"]
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
     with csv_path.open("w", newline="", encoding="utf-8") as file_pointer:
         writer = csv.DictWriter(file_pointer, fieldnames=fieldnames)
         writer.writeheader()
+        # Keep fixture construction explicit so schema regressions are easy to diagnose.
         for draw_date, numbers, bonus in SAMPLE_DRAWS:
             writer.writerow(
                 {

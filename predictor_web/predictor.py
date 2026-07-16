@@ -3,6 +3,8 @@
 # Release Version: 1.0.0
 # License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
 
+"""Deterministic weighted prediction engine for main and bonus numbers."""
+
 import random
 from collections import Counter
 from datetime import datetime, timezone
@@ -20,8 +22,15 @@ from predictor_web.models import LottoDraw, PredictionLine, PredictionReport
 
 
 class PredictorEngine:
+    """Generate, filter, score, and rank weighted Lotto candidate lines."""
+
     def __init__(self, config: AppConfig) -> None:
         self.config = config
+        bac_log(
+            "Predictor engine initialized",
+            component="predictor",
+            picks_per_line=self.config.picks_per_line,
+        )
 
     def generate(
         self,
@@ -31,6 +40,7 @@ class PredictorEngine:
         iterations: int | None = None,
         random_seed: int | None = None,
     ) -> PredictionReport:
+        """Run one reproducible prediction search against historical draws."""
         self._validate_history(draws)
 
         resolved_top_k = self._resolve_positive_integer(
@@ -47,7 +57,16 @@ class PredictorEngine:
         )
         resolved_seed = self.config.default_random_seed if random_seed is None else int(random_seed)
 
-        bac_log("Starting predictor analysis")
+        bac_log(
+            "Prediction run started",
+            component="predictor",
+            draw_count=len(draws),
+            iterations=resolved_iterations,
+            random_seed=resolved_seed,
+            top_k=resolved_top_k,
+        )
+
+        # The analysis phase builds reusable weights before candidate generation begins.
         frequency = build_frequency(draws)
         bonus_frequency = Counter(
             draw.bonus for draw in draws if draw.bonus is not None
@@ -60,10 +79,18 @@ class PredictorEngine:
             number_min=self.config.number_min,
             number_max=self.config.number_max,
         )
+        bac_log(
+            "Prediction analysis completed",
+            component="predictor",
+            bonus_numbers_seen=len(bonus_frequency),
+            pair_count=len(pair_frequency),
+        )
 
         rng = random.Random(resolved_seed)
         candidates: list[tuple[float, tuple[int, ...], int]] = []
+        progress_interval = max(1, min(10000, resolved_iterations // 5 or 1))
 
+        # Generate weighted lines, then keep only lines matching the shape filters.
         for index in range(resolved_iterations):
             ticket = self._weighted_pick(rng, scores)
 
@@ -77,16 +104,50 @@ class PredictorEngine:
                 score = self._score_ticket(ticket, scores, pair_frequency)
                 candidates.append((score, ticket, bonus))
 
-            if (index + 1) % 10000 == 0:
-                bac_log(f"Prediction progress: {index + 1}/{resolved_iterations}")
+            completed_iterations = index + 1
+            if (
+                completed_iterations % progress_interval == 0
+                or completed_iterations == resolved_iterations
+            ):
+                bac_log(
+                    "Prediction generation progress",
+                    component="predictor",
+                    accepted_candidates=len(candidates),
+                    completed_iterations=completed_iterations,
+                    progress_percent=round(
+                        completed_iterations / resolved_iterations * 100,
+                        1,
+                    ),
+                )
 
         if not candidates:
+            bac_log(
+                "Prediction run produced no valid candidates",
+                level="ERROR",
+                component="predictor",
+                iterations=resolved_iterations,
+            )
             raise RuntimeError("No valid candidates generated. Relax filters or increase iterations.")
 
+        # Highest score wins; duplicate six-number lines are removed after sorting.
         candidates.sort(key=lambda item: item[0], reverse=True)
         lines = self._deduplicate_candidates(candidates, limit=resolved_top_k)
+        bac_log(
+            "Top prediction line selected",
+            level="DEBUG",
+            component="predictor",
+            bonus=lines[0].bonus if lines else None,
+            numbers=lines[0].numbers if lines else None,
+            score=lines[0].score if lines else None,
+        )
 
-        bac_log(f"Prepared {len(lines)} ranked prediction lines")
+        bac_log(
+            "Prediction run completed",
+            component="predictor",
+            acceptance_rate=round(len(candidates) / resolved_iterations, 4),
+            accepted_candidates=len(candidates),
+            returned_lines=len(lines),
+        )
         return PredictionReport(
             lines=lines,
             iterations=resolved_iterations,
@@ -97,7 +158,15 @@ class PredictorEngine:
         )
 
     def _validate_history(self, draws: list[LottoDraw]) -> None:
+        """Reject prediction requests that do not have enough history."""
         if len(draws) < self.config.min_history_required:
+            bac_log(
+                "Prediction history requirement not met",
+                level="ERROR",
+                component="predictor",
+                available_draws=len(draws),
+                required_draws=self.config.min_history_required,
+            )
             raise RuntimeError(
                 f"Not enough valid historical draws to generate output. Need at least "
                 f"{self.config.min_history_required} rows."
@@ -111,17 +180,35 @@ class PredictorEngine:
         maximum: int,
         label: str,
     ) -> int:
+        """Resolve an optional positive setting while enforcing its upper bound."""
         resolved = default if value is None else int(value)
         if resolved < 1:
+            bac_log(
+                "Prediction setting is below its minimum",
+                level="WARNING",
+                component="predictor",
+                label=label,
+                value=resolved,
+            )
             raise ValueError(f"{label} must be at least 1.")
         if resolved > maximum:
+            bac_log(
+                "Prediction setting exceeds its maximum",
+                level="WARNING",
+                component="predictor",
+                label=label,
+                maximum=maximum,
+                value=resolved,
+            )
             raise ValueError(f"{label} must be less than or equal to {maximum}.")
         return resolved
 
     def _weighted_pick(self, rng: random.Random, scores: dict[int, float]) -> tuple[int, ...]:
+        """Select six unique main numbers using the calculated number weights."""
         population = list(scores.keys())
         selected: list[int] = []
 
+        # Remove each selected number so a ticket can never contain duplicates.
         while len(selected) < self.config.picks_per_line:
             weights = [scores[number] for number in population]
             pick = rng.choices(population, weights=weights, k=1)[0]
@@ -138,6 +225,7 @@ class PredictorEngine:
         *,
         excluded: tuple[int, ...],
     ) -> int:
+        """Select one weighted bonus from numbers not present in the main line."""
         population = [number for number in scores if number not in excluded]
         weights = [
             scores[number] + bonus_frequency[number] * 0.25
@@ -146,6 +234,7 @@ class PredictorEngine:
         return rng.choices(population, weights=weights, k=1)[0]
 
     def _is_valid_ticket(self, ticket: tuple[int, ...]) -> bool:
+        """Apply lightweight distribution filters to a generated main line."""
         low_count = sum(1 for number in ticket if number <= 31)
         if low_count > 4:
             return False
@@ -167,6 +256,7 @@ class PredictorEngine:
         scores: dict[int, float],
         pair_frequency: Counter[tuple[int, int]],
     ) -> float:
+        """Combine individual weights with historical pair co-occurrence strength."""
         total = sum(scores[number] for number in ticket)
         for pair in combinations(ticket, 2):
             total += pair_frequency[pair] * 2
@@ -178,6 +268,7 @@ class PredictorEngine:
         *,
         limit: int,
     ) -> list[PredictionLine]:
+        """Return the highest-scoring unique lines up to the requested limit."""
         seen: set[tuple[int, ...]] = set()
         lines: list[PredictionLine] = []
 

@@ -3,6 +3,8 @@
 # Release Version: 1.0.0
 # License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
 
+"""In-process WSGI tests for health, summary, prediction, and validation routes."""
+
 import io
 import json
 import tempfile
@@ -15,7 +17,10 @@ from tests.test_support import build_test_config, write_sample_csv
 
 
 class PredictorWebAppTests(unittest.TestCase):
+    """Call the WSGI application directly without opening a network socket."""
+
     def test_health_and_summary_endpoints(self) -> None:
+        """Health and dashboard summary endpoints return successful JSON payloads."""
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config = build_test_config(root)
@@ -32,6 +37,7 @@ class PredictorWebAppTests(unittest.TestCase):
             self.assertEqual(json.loads(summary_body)["total_draws"], 12)
 
     def test_predictions_endpoint_returns_payload(self) -> None:
+        """Prediction responses include ranked lines and distinct bonus values."""
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config = build_test_config(root)
@@ -52,6 +58,7 @@ class PredictorWebAppTests(unittest.TestCase):
                 self.assertNotIn(line["bonus"], line["numbers"])
 
     def test_predictions_endpoint_validates_limits(self) -> None:
+        """Out-of-range query parameters return a descriptive client error."""
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config = build_test_config(root)
@@ -65,6 +72,7 @@ class PredictorWebAppTests(unittest.TestCase):
 
     @staticmethod
     def _request(app, path: str, method: str = "GET") -> tuple[str, dict[str, str], str]:
+        """Build a minimal WSGI environment and capture the complete response."""
         query_string = ""
         path_info = path
         if "?" in path:
@@ -72,6 +80,7 @@ class PredictorWebAppTests(unittest.TestCase):
 
         captured: dict[str, object] = {}
 
+        # WSGI communicates status and headers through this callback.
         def start_response(status: str, headers: list[tuple[str, str]]) -> None:
             captured["status"] = status
             captured["headers"] = dict(headers)

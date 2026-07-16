@@ -4,6 +4,7 @@
 // Release Version: 1.0.0
 // License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
 
+// Cache the fixed dashboard elements once instead of querying on every render.
 const dom = {
     statusMessage: document.querySelector("#status-message"),
     predictionMeta: document.querySelector("#prediction-meta"),
@@ -21,6 +22,7 @@ const dom = {
     seed: document.querySelector("#seed"),
 };
 
+// All API calls share consistent JSON parsing and error handling.
 async function fetchJson(url, options = {}) {
     const response = await fetch(url, options);
     const payload = await response.json();
@@ -32,6 +34,7 @@ async function fetchJson(url, options = {}) {
     return payload;
 }
 
+// Summary values are intentionally rendered as text to avoid HTML injection.
 function renderSummary(summary) {
     dom.totalDraws.textContent = summary.total_draws;
     dom.historyWindow.textContent = summary.earliest_draw_date && summary.latest_draw_date
@@ -45,6 +48,7 @@ function renderSummary(summary) {
         : "No data";
 }
 
+// Draw rows come from the validated repository API.
 function renderDraws(draws) {
     if (!draws.length) {
         dom.drawsTableBody.innerHTML = "<tr><td colspan='3'>No draw rows available.</td></tr>";
@@ -60,6 +64,7 @@ function renderDraws(draws) {
     `).join("");
 }
 
+// Prediction rendering verifies the backend schema before building any cards.
 function renderPredictions(report) {
     if (!report.lines.length) {
         dom.predictionsList.innerHTML = `
@@ -70,6 +75,7 @@ function renderPredictions(report) {
         return;
     }
 
+    // An old Python process may serve a stale schema after frontend files change.
     const invalidLine = report.lines.find((line) => (
         !Number.isInteger(line.bonus)
         || line.bonus < 1
@@ -82,6 +88,7 @@ function renderPredictions(report) {
         );
     }
 
+    // The API supplies numeric values only; cards keep the result compact and scannable.
     dom.predictionsList.innerHTML = report.lines.map((line) => `
         <article class="prediction-card">
             <h3>Rank ${line.rank}</h3>
@@ -96,6 +103,7 @@ function renderPredictions(report) {
         + `${report.iterations.toLocaleString()} iterations and seed ${report.random_seed}.`;
 }
 
+// Load independent dashboard resources concurrently for a faster first render.
 async function loadDashboard() {
     dom.statusMessage.textContent = "Loading dashboard data...";
 
@@ -113,6 +121,7 @@ async function loadDashboard() {
     }
 }
 
+// Translate form values into the query parameters accepted by the prediction API.
 async function handlePredictionSubmit(event) {
     event.preventDefault();
     dom.generateButton.disabled = true;
@@ -135,6 +144,7 @@ async function handlePredictionSubmit(event) {
     }
 }
 
+// Remote refresh is explicit because it replaces the local CSV repository contents.
 async function handleRefreshClick() {
     dom.refreshButton.disabled = true;
     dom.statusMessage.textContent = "Refreshing remote lotto dataset...";
@@ -151,6 +161,7 @@ async function handleRefreshClick() {
     }
 }
 
+// Attach behavior after the static document has defined all target elements.
 dom.predictionForm.addEventListener("submit", handlePredictionSubmit);
 dom.refreshButton.addEventListener("click", handleRefreshClick);
 loadDashboard();

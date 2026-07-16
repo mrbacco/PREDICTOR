@@ -88,6 +88,22 @@ Run the automated checks with:
 python -m unittest discover -s tests -v
 ```
 
+## Terminal Logging
+
+All backend layers use the shared `bac_log` utility. Each line includes a timestamp,
+severity, component, message, and structured context so requests can be followed from
+the web route through repository and predictor operations.
+
+The default level is `INFO`. Set `BAC_LOG_LEVEL` before starting the app to change
+terminal verbosity:
+
+```powershell
+$env:BAC_LOG_LEVEL = "DEBUG"
+python app.py
+```
+
+Supported levels are `DEBUG`, `INFO`, `WARNING`, and `ERROR`.
+
 ## Scalability Notes
 
 This codebase is now organized around layers that can scale independently:

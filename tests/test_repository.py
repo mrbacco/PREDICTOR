@@ -3,6 +3,8 @@
 # Release Version: 1.0.0
 # License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
 
+"""CSV repository tests for validation, skipping, and chronological ordering."""
+
 import csv
 import tempfile
 import unittest
@@ -13,12 +15,16 @@ from tests.test_support import SAMPLE_DRAWS, build_test_config, write_sample_csv
 
 
 class LottoRepositoryTests(unittest.TestCase):
+    """Exercise repository behavior with both valid and malformed rows."""
+
     def test_load_draws_skips_invalid_rows_and_sorts(self) -> None:
+        """Malformed and duplicate-number rows do not enter the returned history."""
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config = build_test_config(root)
             write_sample_csv(config.csv_path)
 
+            # Append representative failures while preserving the valid fixture rows.
             with config.csv_path.open("a", newline="", encoding="utf-8") as file_pointer:
                 writer = csv.writer(file_pointer)
                 writer.writerow(["bad-date", 1, 2, 3, 4, 5, 6, ""])
