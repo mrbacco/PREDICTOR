@@ -1,0 +1,15 @@
+<!--
+Author: mrbacco04@gmail.com
+Month: July 2026
+Release Version: 1.0.0
+License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
+-->
+<resources>
+    <style name="Theme.IrishLottoPredictor" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">@font/roboto_condensed</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">#F5F7F5</item>
+        <item name="android:navigationBarColor">#F5F7F5</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>

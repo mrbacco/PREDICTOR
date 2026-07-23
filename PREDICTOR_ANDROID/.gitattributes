@@ -1,0 +1,10 @@
+# Author: mrbacco04@gmail.com
+# Month: July 2026
+# Release Version: 1.0.0
+# License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
+
+# Preserve executable shell scripts and predictable source line endings.
+gradlew text eol=lf
+gradlew.bat text eol=crlf
+*.kt text eol=lf
+*.kts text eol=lf

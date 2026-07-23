@@ -11,6 +11,7 @@ This repository is now structured as a modular web application instead of a sing
 It includes:
 
 - a browser dashboard for recent draws, dataset refreshes, and prediction runs
+- a standalone native Android application in `PREDICTOR_ANDROID/`
 - a service layer that coordinates scraping, repository access, and prediction logic
 - separate modules for configuration, models, analytics, persistence, web routing, and CLI entrypoints
 - automated tests for the repository, predictor, and HTTP endpoints
@@ -71,6 +72,16 @@ http://127.0.0.1:8080
 ```powershell
 python generate_predictions.py
 ```
+
+## Android Application
+
+The `PREDICTOR_ANDROID/` folder is an independent Kotlin and Jetpack Compose application. Open
+that folder in Android Studio, allow Gradle to sync, then run the `app` configuration
+on an emulator or connected Android phone. The predictor works offline from its
+bundled history and only uses the internet when **Refresh data** is pressed.
+
+See [`PREDICTOR_ANDROID/README.md`](PREDICTOR_ANDROID/README.md) for Android Studio, APK, and device
+installation instructions.
 
 ## API Endpoints
 
