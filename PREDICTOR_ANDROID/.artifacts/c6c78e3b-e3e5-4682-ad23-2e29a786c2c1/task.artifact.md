@@ -1,0 +1,4 @@
+- [ ] Create signing properties template
+- [ ] Configure signing in `app/build.gradle.kts`
+- [ ] Provide instructions for keystore generation
+- [ ] Verify release build compilation

@@ -3,6 +3,8 @@
 // Release Version: 1.0.0
 // License: Apache-2.0 OR AGPL-3.0-or-later OR LicenseRef-Commercial
 
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -10,12 +12,27 @@ plugins {
 
 android {
     namespace = "com.mrbacco.irishlottopredictor"
-    compileSdk = 36
+    compileSdk = 37
+
+    val signingPropsFile = rootProject.file("release-signing.properties")
+    val signingProps = Properties()
+    if (signingPropsFile.exists()) {
+        signingPropsFile.inputStream().use { signingProps.load(it) }
+    }
+
+    signingConfigs {
+        create("release") {
+            signingProps.getProperty("KEYSTORE_FILE")?.let { storeFile = file(it) }
+            storePassword = signingProps.getProperty("KEYSTORE_PASSWORD")
+            keyAlias = signingProps.getProperty("KEY_ALIAS")
+            keyPassword = signingProps.getProperty("KEY_PASSWORD")
+        }
+    }
 
     defaultConfig {
         applicationId = "com.mrbacco.irishlottopredictor"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0.0"
 
@@ -27,6 +44,9 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            if (signingConfigs.getByName("release").storeFile != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -61,7 +81,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
 
     val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
     implementation(composeBom)

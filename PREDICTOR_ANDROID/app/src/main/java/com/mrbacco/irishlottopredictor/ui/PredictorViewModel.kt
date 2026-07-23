@@ -122,10 +122,9 @@ class PredictorViewModel(
                     topK = settings.topK,
                     iterations = settings.iterations,
                     randomSeed = settings.seed,
-                    onProgress = { progress ->
-                        _uiState.update { it.copy(progressPercent = progress) }
-                    },
-                )
+                ) { progress ->
+                    _uiState.update { it.copy(progressPercent = progress) }
+                }
             }
             _uiState.update {
                 it.copy(
@@ -147,9 +146,9 @@ class PredictorViewModel(
         val iterations = state.iterationsInput.toIntOrNull()
         val seed = state.seedInput.toLongOrNull()
         val error = when {
-            topK == null || topK !in 1..PredictorConfig.MAX_TOP_K ->
+            (topK == null || topK !in 1..PredictorConfig.MAX_TOP_K) ->
                 "Predictions must be between 1 and ${PredictorConfig.MAX_TOP_K}."
-            iterations == null || iterations !in 1..PredictorConfig.MAX_ITERATIONS ->
+            (iterations == null || iterations !in 1..PredictorConfig.MAX_ITERATIONS) ->
                 "Iterations must be between 1 and ${PredictorConfig.MAX_ITERATIONS}."
             seed == null -> "Enter a valid positive random seed."
             else -> null
@@ -162,7 +161,7 @@ class PredictorViewModel(
             BacLog.warning("Prediction settings rejected", "view_model", "reason" to error)
             return null
         }
-        return PredictionSettings(topK, iterations, seed)
+        return PredictionSettings(topK!!, iterations!!, seed!!)
     }
 
     private fun publishDraws(draws: List<LottoDraw>, sourceLabel: String) {
@@ -227,4 +226,4 @@ class PredictorViewModel(
     }
 }
 
-private fun newSeed(): Long = Random.Default.nextLong(1, Int.MAX_VALUE.toLong())
+private fun newSeed(): Long = Random.nextLong(1, Int.MAX_VALUE.toLong())

@@ -1,0 +1,14 @@
+# This file is a template for release signing configuration.
+# COPY this file to 'release-signing.properties' (which is ignored by Git) and fill in the values.
+
+# The absolute path to your keystore file (.jks or .keystore)
+KEYSTORE_FILE=C:/path/to/your/release.jks
+
+# The password for the keystore
+KEYSTORE_PASSWORD=your_keystore_password
+
+# The alias of the key within the keystore
+KEY_ALIAS=your_key_alias
+
+# The password for the specific key
+KEY_PASSWORD=your_key_password

@@ -8,6 +8,7 @@
 .kotlin/
 .idea/
 local.properties
+release-signing.properties
 **/build/
 captures/
 *.iml
